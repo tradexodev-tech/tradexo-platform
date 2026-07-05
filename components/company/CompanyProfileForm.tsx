@@ -8,41 +8,8 @@ import CompanyDocuments, {
 import CompanyLogoUpload from "@/components/company/CompanyLogoUpload";
 import { Button } from "@/components/ui/button";
 import { resolveCompanySlugForSave } from "@/lib/company";
+import { COMPANY_INDUSTRIES } from "@/lib/catalog";
 import { supabase } from "@/lib/supabase";
-
-const INDUSTRIES = [
-  "Agriculture & Agribusiness",
-  "Aerospace & Defense",
-  "Automotive & Vehicle Parts",
-  "Chemicals & Petrochemicals",
-  "Construction & Building Materials",
-  "Consumer Electronics",
-  "Electrical Equipment & Components",
-  "Energy & Renewable Energy",
-  "Environmental Services",
-  "Fashion & Luxury Goods",
-  "Food & Beverage",
-  "Furniture & Home Goods",
-  "Healthcare & Medical Devices",
-  "Hospitality & Tourism Services",
-  "Industrial Machinery",
-  "Information Technology & Software",
-  "Logistics & Freight Forwarding",
-  "Metals & Steel",
-  "Mining & Minerals",
-  "Oil & Gas",
-  "Packaging & Printing",
-  "Pharmaceuticals & Biotech",
-  "Plastics & Rubber",
-  "Retail & Wholesale Trade",
-  "Seafood & Fisheries",
-  "Telecommunications",
-  "Textiles & Apparel",
-  "Tobacco & Alternatives",
-  "Toys & Recreational Products",
-  "Wood & Paper Products",
-  "Other",
-];
 
 const BUSINESS_TYPES = [
   "Exporter",
@@ -341,7 +308,7 @@ export default function CompanyProfileForm() {
               onChange={(e) => updateField("industry", e.target.value)}
             >
               <option value="">Select industry</option>
-              {INDUSTRIES.map((item) => (
+              {COMPANY_INDUSTRIES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>

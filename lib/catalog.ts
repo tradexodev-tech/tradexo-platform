@@ -27,6 +27,7 @@ export const PRODUCT_COUNTRIES = [
 
 export const COMPANY_INDUSTRIES = [
   "Agriculture & Agribusiness",
+  "Additive Manufacturing",
   "Aerospace & Defense",
   "Automotive & Vehicle Parts",
   "Chemicals & Petrochemicals",

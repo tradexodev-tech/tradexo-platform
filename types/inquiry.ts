@@ -18,6 +18,10 @@ export type Inquiry = {
   message: string;
   reply_message: string | null;
   replied_at: string | null;
+  /** Set when supplier opens a new inquiry. Requires `read_at` column migration. */
+  read_at?: string | null;
+  /** Set when inquiry is closed. Requires `closed_at` column migration. */
+  closed_at?: string | null;
   status: InquiryStatus;
 };
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Building2, MapPin, Package, Star } from "lucide-react";
 
+import ProductContactSupplier from "@/components/inquiries/ProductContactSupplier";
 import ProductCard from "@/components/products/ProductCard";
 import { Button } from "@/components/ui/button";
 import type { PublicCompanyProfile } from "@/types/company";
@@ -64,22 +65,24 @@ export default function PublicCompanyProfileView({
 }: PublicCompanyProfileViewProps) {
   const location = [company.city, company.country].filter(Boolean).join(", ");
   const businessTypes = parseBusinessTypes(company.business_type);
+  const firstProduct = products[0] ?? null;
 
   return (
     <main className="flex-1 bg-background">
-      <div className="relative h-44 bg-gradient-to-r from-slate-100 via-blue-50 to-slate-100 sm:h-52 md:h-56">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Building2
-            className="size-16 text-slate-300 sm:size-20"
-            strokeWidth={1.25}
-            aria-hidden
-          />
+      <section className="relative isolate">
+        <div className="relative h-44 bg-gradient-to-r from-slate-100 via-blue-50 to-slate-100 sm:h-52 md:h-56">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Building2
+              className="size-16 text-slate-300 sm:size-20"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
-        <header className="-mt-16 pb-8 text-center">
-          <div className="mx-auto flex size-28 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-card shadow-md sm:size-32">
+        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
+          <header className="-mt-14 pb-8 text-center sm:-mt-16">
+            <div className="mx-auto flex size-28 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-card shadow-md sm:size-32">
             {company.company_logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -125,9 +128,22 @@ export default function PublicCompanyProfileView({
             </div>
           )}
 
-          <Button type="button" size="lg" className="mt-6 min-w-44">
-            Contact Supplier
-          </Button>
+          {firstProduct ? (
+            <ProductContactSupplier
+              productName={firstProduct.product_name}
+              productId={firstProduct.id}
+              supplierUserId={company.id}
+            />
+          ) : (
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <Button type="button" size="lg" className="min-w-44" disabled>
+                Contact Supplier
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                No products available to inquire about.
+              </p>
+            </div>
+          )}
         </header>
 
         <SectionDivider />
@@ -208,6 +224,7 @@ export default function PublicCompanyProfileView({
           )}
         </section>
       </div>
+      </section>
     </main>
   );
 }

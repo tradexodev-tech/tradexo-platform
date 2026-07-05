@@ -4,8 +4,10 @@ import { useEffect, useRef } from "react";
 import { Send, X } from "lucide-react";
 
 import InquiryStatusBadge from "@/components/inquiries/InquiryStatusBadge";
+import InquiryTimeline from "@/components/inquiries/InquiryTimeline";
 import { formatSubmittedDate } from "@/components/inquiries/InquiryTable";
 import { Button } from "@/components/ui/button";
+import type { InquiryTimelineEvent } from "@/lib/inquiry-timeline";
 import type { Inquiry } from "@/types/inquiry";
 import { getBuyerInitials, MAX_INQUIRY_REPLY_LENGTH } from "@/types/inquiry";
 
@@ -21,6 +23,7 @@ type InquiryDetailsDrawerProps = {
   sendingReply?: boolean;
   replyError?: string | null;
   successMessage?: string | null;
+  timelineEvents?: InquiryTimelineEvent[];
 };
 
 const textareaClass =
@@ -59,6 +62,7 @@ export default function InquiryDetailsDrawer({
   sendingReply = false,
   replyError,
   successMessage,
+  timelineEvents = [],
 }: InquiryDetailsDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const prevOpenRef = useRef(false);
@@ -68,11 +72,13 @@ export default function InquiryDetailsDrawer({
     onClose();
   }
   useEffect(() => {
-    if (open && inquiry) {
+    const wasOpen = prevOpenRef.current;
+
+    if (open && !wasOpen && inquiry) {
       requestAnimationFrame(() => {
         closeButtonRef.current?.focus();
       });
-    } else if (prevOpenRef.current) {
+    } else if (!open && wasOpen) {
       triggerRef?.current?.focus();
     }
 
@@ -262,6 +268,17 @@ export default function InquiryDetailsDrawer({
               </div>
             )}
           </div>
+
+          {timelineEvents.length > 0 ? (
+            <div className="mt-8 border-t pt-6">
+              <h3 className="text-sm font-semibold text-foreground">
+                Timeline
+              </h3>
+              <div className="mt-4">
+                <InquiryTimeline events={timelineEvents} />
+              </div>
+            </div>
+          ) : null}
         </div>
       </aside>
     </>

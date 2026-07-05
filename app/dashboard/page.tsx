@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import GettingStarted from "@/components/dashboard/GettingStarted";
+import DashboardAnalytics from "@/components/dashboard/DashboardAnalytics";
 import ProfileSummaryCard from "@/components/dashboard/ProfileSummaryCard";
-import StatCard from "@/components/dashboard/StatCard";
 import { getProfile, getUser } from "@/lib/auth";
 
 type Profile = {
@@ -74,37 +73,7 @@ export default function DashboardPage() {
         country={profile.country || ""}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="AI Match"
-          value="0"
-          description="Potential business matches"
-          comingSoon
-        />
-        <StatCard
-          title="Marketplace"
-          value="0"
-          description="Active listings"
-          comingSoon
-        />
-        <StatCard
-          title="Messages"
-          value="0"
-          description="Unread conversations"
-          comingSoon
-        />
-        <StatCard
-          title="Analytics"
-          value="—"
-          description="Performance insights"
-          comingSoon
-        />
-      </div>
-
-      <GettingStarted
-        hasProfile={Boolean(profile.full_name)}
-        hasRole={Boolean(profile.role)}
-      />
+      <DashboardAnalytics />
     </div>
   );
 }

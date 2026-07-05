@@ -6,7 +6,7 @@ import type {
   InquiryFilters,
   InquiryStatus,
 } from "@/types/inquiry";
-import { normalizeInquiryStatus } from "@/types/inquiry";
+import { normalizeInquiryStatus, validateInquiryReply } from "@/types/inquiry";
 
 export type { CreateInquiryInput };
 
@@ -39,6 +39,8 @@ function mapInquiry(row: Record<string, unknown>): Inquiry {
     message: (row.message as string) ?? "",
     reply_message: (row.reply_message as string | null) ?? null,
     replied_at: (row.replied_at as string | null) ?? null,
+    read_at: (row.read_at as string | null | undefined) ?? null,
+    closed_at: (row.closed_at as string | null | undefined) ?? null,
     status: normalizeInquiryStatus(row.status),
   };
 }
@@ -46,6 +48,17 @@ function mapInquiry(row: Record<string, unknown>): Inquiry {
 function optionalText(value?: string) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+/** Escape user input for PostgREST `.or()` ilike filters. */
+function buildPostgrestIlikePattern(search: string) {
+  const escaped = search
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '""')
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+
+  return `"%${escaped}%"`;
 }
 
 export async function createInquiry(input: CreateInquiryInput) {
@@ -85,7 +98,7 @@ export async function fetchSupplierInquiries(filters: InquiryFilters = {}) {
 
   const trimmedSearch = filters.search?.trim();
   if (trimmedSearch) {
-    const pattern = `%${trimmedSearch}%`;
+    const pattern = buildPostgrestIlikePattern(trimmedSearch);
     query = query.or(
       `buyer_name.ilike.${pattern},buyer_email.ilike.${pattern},buyer_company.ilike.${pattern},product_name.ilike.${pattern}`
     );
@@ -133,9 +146,35 @@ export async function updateInquiryStatus(id: string, status: InquiryStatus) {
   const { userId, error: authError } = await getAuthenticatedUserId();
   if (!userId) return { error: authError };
 
+  const payload: {
+    status: InquiryStatus;
+    read_at?: string;
+    closed_at?: string;
+  } = { status };
+
+  if (status === "read") {
+    const { data: existing, error: fetchError } = await supabase
+      .from("inquiries")
+      .select("read_at")
+      .eq("id", id)
+      .eq("supplier_user_id", userId)
+      .maybeSingle();
+
+    if (fetchError) return { error: fetchError };
+    if (!existing) return { error: { message: "Inquiry not found" } };
+
+    if (!existing.read_at) {
+      payload.read_at = new Date().toISOString();
+    }
+  }
+
+  if (status === "closed") {
+    payload.closed_at = new Date().toISOString();
+  }
+
   const { error } = await supabase
     .from("inquiries")
-    .update({ status })
+    .update(payload)
     .eq("id", id)
     .eq("supplier_user_id", userId);
 
@@ -145,6 +184,11 @@ export async function updateInquiryStatus(id: string, status: InquiryStatus) {
 }
 
 export async function replyToInquiry(id: string, replyMessage: string) {
+  const validationError = validateInquiryReply(replyMessage);
+  if (validationError) {
+    return { data: null, error: { message: validationError } };
+  }
+
   const { userId, error: authError } = await getAuthenticatedUserId();
   if (!userId) return { data: null, error: authError };
 

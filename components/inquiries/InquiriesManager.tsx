@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Eye } from "lucide-react";
 
 import InquiryDetailsDrawer from "@/components/inquiries/InquiryDetailsDrawer";
@@ -14,9 +14,9 @@ import InquiryTable, {
 } from "@/components/inquiries/InquiryTable";
 import StatCard from "@/components/dashboard/StatCard";
 import { Button } from "@/components/ui/button";
+import { buildInquiryTimeline } from "@/lib/inquiry-timeline";
 import { useInquiries } from "@/hooks/useInquiries";
 import type { Inquiry } from "@/types/inquiry";
-
 function InquiryMobileCard({
   inquiry,
   onView,
@@ -95,6 +95,11 @@ export default function InquiriesManager() {
     }
     openInquiryFromList(inquiry);
   }
+
+  const timelineEvents = useMemo(
+    () => (selectedInquiry ? buildInquiryTimeline(selectedInquiry) : []),
+    [selectedInquiry]
+  );
 
   if (loading) {
     return <InquiryLoadingState />;
@@ -200,6 +205,7 @@ export default function InquiriesManager() {
         sendingReply={sendingReply}
         replyError={replyError}
         successMessage={drawerSuccess}
+        timelineEvents={timelineEvents}
       />
     </div>
   );

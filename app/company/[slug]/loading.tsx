@@ -9,10 +9,11 @@ export default function PublicCompanyLoading() {
     <>
       <Navbar />
       <main className="flex-1 bg-background">
-        <SkeletonBlock className="h-44 sm:h-52 md:h-56" />
+        <section className="relative isolate">
+          <SkeletonBlock className="h-44 sm:h-52 md:h-56" />
 
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="-mt-16 pb-8 text-center">
+          <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="-mt-14 pb-8 text-center sm:-mt-16">
             <SkeletonBlock className="mx-auto size-28 rounded-2xl sm:size-32" />
             <SkeletonBlock className="mx-auto mt-5 h-8 w-64" />
             <SkeletonBlock className="mx-auto mt-3 h-4 w-40" />
@@ -53,6 +54,7 @@ export default function PublicCompanyLoading() {
             </div>
           </div>
         </div>
+        </section>
       </main>
     </>
   );

@@ -2,16 +2,20 @@
 
 import KpiCard from "@/components/dashboard/KpiCard";
 import MonthlyInquiryChart from "@/components/dashboard/MonthlyInquiryChart";
+import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
 import { useDashboardAnalytics } from "@/hooks/useDashboardAnalytics";
 
 export default function DashboardAnalytics() {
   const {
     metrics,
     monthlyInquiries,
+    recentActivity,
     loading,
     monthlyLoading,
+    activityLoading,
     error,
     monthlyError,
+    activityError,
   } = useDashboardAnalytics();
 
   return (
@@ -59,6 +63,12 @@ export default function DashboardAnalytics() {
         data={monthlyInquiries}
         loading={monthlyLoading}
         error={monthlyError}
+      />
+
+      <RecentActivityFeed
+        activities={recentActivity}
+        loading={activityLoading}
+        error={activityError}
       />
     </div>
   );

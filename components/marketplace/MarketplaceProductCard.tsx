@@ -7,6 +7,7 @@ import {
   Package,
 } from "lucide-react";
 
+import ProductFavoriteToggle from "@/components/products/ProductFavoriteToggle";
 import {
   formatMarketplaceLeadTime,
   formatMarketplaceMoq,
@@ -49,7 +50,7 @@ export default function MarketplaceProductCard({
   );
 
   const imageBadges = (
-    <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 p-3">
+    <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 p-3 pr-14">
       <span className="rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
         {product.product_category || "Uncategorized"}
       </span>
@@ -64,6 +65,12 @@ export default function MarketplaceProductCard({
 
   const imageBlock = (
     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="absolute right-3 top-3 z-20">
+        <ProductFavoriteToggle
+          productId={product.id}
+          productName={product.product_name || "Product"}
+        />
+      </div>
       {imageBadges}
       <div className="flex size-full items-center justify-center">
         {imageContent}
@@ -161,6 +168,12 @@ export default function MarketplaceProductCard({
     <article className={cardClassName}>
       {productHref ? (
         <Link href={productHref} className="relative block aspect-[4/3] overflow-hidden bg-muted">
+          <div className="absolute right-3 top-3 z-20">
+            <ProductFavoriteToggle
+              productId={product.id}
+              productName={product.product_name || "Product"}
+            />
+          </div>
           {imageBadges}
           <div className="flex size-full items-center justify-center">
             {imageContent}
@@ -168,6 +181,12 @@ export default function MarketplaceProductCard({
         </Link>
       ) : (
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          <div className="absolute right-3 top-3 z-20">
+            <ProductFavoriteToggle
+              productId={product.id}
+              productName={product.product_name || "Product"}
+            />
+          </div>
           {imageBadges}
           <div className="flex size-full items-center justify-center">
             {imageContent}

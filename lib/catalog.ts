@@ -62,6 +62,16 @@ export const COMPANY_INDUSTRIES = [
 
 export type MarketplaceSort = "newest" | "oldest" | "name";
 
+export const MARKETPLACE_SUPPLIER_TYPES = [
+  "Exporter",
+  "Importer",
+  "Manufacturer",
+  "Service Provider",
+] as const;
+
+export type MarketplaceSupplierType =
+  (typeof MARKETPLACE_SUPPLIER_TYPES)[number];
+
 export const MARKETPLACE_SORT_OPTIONS: { value: MarketplaceSort; label: string }[] = [
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },

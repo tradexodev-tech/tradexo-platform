@@ -1,90 +1,44 @@
-"use client";
-
-import { useEffect, useState, useTransition } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
-
 import {
   COMPANY_INDUSTRIES,
   MARKETPLACE_SORT_OPTIONS,
+  MARKETPLACE_SUPPLIER_TYPES,
   PRODUCT_CATEGORIES,
   PRODUCT_COUNTRIES,
   type MarketplaceSort,
 } from "@/lib/catalog";
-import type { MarketplaceFilters } from "@/lib/product-public";
+import type { ResolvedMarketplaceFilters } from "@/lib/product-public";
+import { Search } from "lucide-react";
 
 const selectClass =
-  "rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
 type MarketplaceFiltersBarProps = {
-  filters: Required<Pick<MarketplaceFilters, "sort">> &
-    MarketplaceFilters;
+  filters: ResolvedMarketplaceFilters;
+  searchInput: string;
+  onSearchChange: (value: string) => void;
+  onCategoryChange: (value: string) => void;
+  onCountryChange: (value: string) => void;
+  onIndustryChange: (value: string) => void;
+  onSupplierTypeChange: (value: string) => void;
+  onSortChange: (value: MarketplaceSort) => void;
+  onClearFilters: () => void;
+  hasActiveFilters: boolean;
+  isPending?: boolean;
 };
-
-function buildQueryString(filters: MarketplaceFilters) {
-  const params = new URLSearchParams();
-
-  if (filters.search?.trim()) {
-    params.set("q", filters.search.trim());
-  }
-  if (filters.category?.trim()) {
-    params.set("category", filters.category.trim());
-  }
-  if (filters.country?.trim()) {
-    params.set("country", filters.country.trim());
-  }
-  if (filters.industry?.trim()) {
-    params.set("industry", filters.industry.trim());
-  }
-  if (filters.sort && filters.sort !== "newest") {
-    params.set("sort", filters.sort);
-  }
-
-  const query = params.toString();
-  return query ? `?${query}` : "";
-}
 
 export default function MarketplaceFiltersBar({
   filters,
+  searchInput,
+  onSearchChange,
+  onCategoryChange,
+  onCountryChange,
+  onIndustryChange,
+  onSupplierTypeChange,
+  onSortChange,
+  onClearFilters,
+  hasActiveFilters,
+  isPending = false,
 }: MarketplaceFiltersBarProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const [search, setSearch] = useState(filters.search ?? "");
-
-  useEffect(() => {
-    setSearch(filters.search ?? "");
-  }, [filters.search]);
-
-  function applyFilters(next: MarketplaceFilters) {
-    startTransition(() => {
-      router.push(`${pathname}${buildQueryString(next)}`);
-    });
-  }
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const trimmed = search.trim();
-      const current = searchParams.get("q")?.trim() ?? "";
-      if (trimmed === current) return;
-
-      const params = new URLSearchParams(searchParams.toString());
-      if (trimmed) {
-        params.set("q", trimmed);
-      } else {
-        params.delete("q");
-      }
-
-      const query = params.toString();
-      startTransition(() => {
-        router.push(query ? `${pathname}?${query}` : pathname);
-      });
-    }, 400);
-
-    return () => window.clearTimeout(timeout);
-  }, [search, pathname, router, searchParams]);
-
   return (
     <div
       className={`space-y-3 border-b pb-6 ${isPending ? "opacity-70" : ""}`}
@@ -94,23 +48,18 @@ export default function MarketplaceFiltersBar({
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="search"
-          placeholder="Search products..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search product name, supplier, or description"
+          value={searchInput}
+          onChange={(event) => onSearchChange(event.target.value)}
           className="w-full rounded-lg border bg-background py-2.5 pr-3 pl-9 text-sm text-foreground outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           aria-label="Search marketplace products"
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <select
           value={filters.category ?? ""}
-          onChange={(event) =>
-            applyFilters({
-              ...filters,
-              category: event.target.value || undefined,
-            })
-          }
+          onChange={(event) => onCategoryChange(event.target.value)}
           className={selectClass}
           aria-label="Filter by category"
         >
@@ -124,12 +73,7 @@ export default function MarketplaceFiltersBar({
 
         <select
           value={filters.country ?? ""}
-          onChange={(event) =>
-            applyFilters({
-              ...filters,
-              country: event.target.value || undefined,
-            })
-          }
+          onChange={(event) => onCountryChange(event.target.value)}
           className={selectClass}
           aria-label="Filter by country"
         >
@@ -143,12 +87,7 @@ export default function MarketplaceFiltersBar({
 
         <select
           value={filters.industry ?? ""}
-          onChange={(event) =>
-            applyFilters({
-              ...filters,
-              industry: event.target.value || undefined,
-            })
-          }
+          onChange={(event) => onIndustryChange(event.target.value)}
           className={selectClass}
           aria-label="Filter by industry"
         >
@@ -161,12 +100,23 @@ export default function MarketplaceFiltersBar({
         </select>
 
         <select
+          value={filters.supplierType ?? ""}
+          onChange={(event) => onSupplierTypeChange(event.target.value)}
+          className={selectClass}
+          aria-label="Filter by supplier type"
+        >
+          <option value="">All Supplier Types</option>
+          {MARKETPLACE_SUPPLIER_TYPES.map((supplierType) => (
+            <option key={supplierType} value={supplierType}>
+              {supplierType}
+            </option>
+          ))}
+        </select>
+
+        <select
           value={filters.sort}
           onChange={(event) =>
-            applyFilters({
-              ...filters,
-              sort: event.target.value as MarketplaceSort,
-            })
+            onSortChange(event.target.value as MarketplaceSort)
           }
           className={selectClass}
           aria-label="Sort products"
@@ -178,6 +128,18 @@ export default function MarketplaceFiltersBar({
           ))}
         </select>
       </div>
+
+      {hasActiveFilters ? (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="rounded-lg border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Clear Filters
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

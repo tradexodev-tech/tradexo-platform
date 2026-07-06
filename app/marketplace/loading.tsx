@@ -1,4 +1,5 @@
 import Navbar from "@/components/landing/Navbar";
+import MarketplaceProductGridSkeleton from "@/components/marketplace/MarketplaceProductGridSkeleton";
 
 function SkeletonBlock({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-muted ${className ?? ""}`} />;
@@ -15,7 +16,8 @@ export default function MarketplaceLoading() {
 
           <div className="mt-8 space-y-3 border-b pb-6">
             <SkeletonBlock className="h-10 w-full" />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <SkeletonBlock className="h-10 w-full" />
               <SkeletonBlock className="h-10 w-full" />
               <SkeletonBlock className="h-10 w-full" />
               <SkeletonBlock className="h-10 w-full" />
@@ -23,12 +25,8 @@ export default function MarketplaceLoading() {
             </div>
           </div>
 
-          <SkeletonBlock className="mt-6 h-4 w-24" />
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <SkeletonBlock className="h-72 rounded-xl" />
-            <SkeletonBlock className="h-72 rounded-xl" />
-            <SkeletonBlock className="hidden h-72 rounded-xl lg:block" />
+          <div className="mt-6">
+            <MarketplaceProductGridSkeleton />
           </div>
         </div>
       </main>

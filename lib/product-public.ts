@@ -56,8 +56,83 @@ export type MarketplaceFilters = {
   category?: string;
   country?: string;
   industry?: string;
+  supplierType?: string;
   sort?: "newest" | "oldest" | "name";
 };
+
+export type ResolvedMarketplaceFilters = Required<
+  Pick<MarketplaceFilters, "sort">
+> &
+  MarketplaceFilters;
+
+/** Escape user input for PostgREST `.or()` ilike filters. */
+function buildPostgrestIlikePattern(search: string) {
+  const escaped = search
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '""')
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+
+  return `"%${escaped}%"`;
+}
+
+function optionalFilterValue(value?: string) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+export function parseMarketplaceFilters(
+  searchParams: Record<string, string | undefined>
+): ResolvedMarketplaceFilters {
+  const sort = searchParams.sort;
+  const parsedSort =
+    sort === "oldest" || sort === "name" ? sort : ("newest" as const);
+
+  return {
+    search: optionalFilterValue(searchParams.q),
+    category: optionalFilterValue(searchParams.category),
+    country: optionalFilterValue(searchParams.country),
+    industry: optionalFilterValue(searchParams.industry),
+    supplierType: optionalFilterValue(searchParams.supplierType),
+    sort: parsedSort,
+  };
+}
+
+export function buildMarketplaceQueryString(filters: MarketplaceFilters) {
+  const params = new URLSearchParams();
+
+  if (filters.search?.trim()) {
+    params.set("q", filters.search.trim());
+  }
+  if (filters.category?.trim()) {
+    params.set("category", filters.category.trim());
+  }
+  if (filters.country?.trim()) {
+    params.set("country", filters.country.trim());
+  }
+  if (filters.industry?.trim()) {
+    params.set("industry", filters.industry.trim());
+  }
+  if (filters.supplierType?.trim()) {
+    params.set("supplierType", filters.supplierType.trim());
+  }
+  if (filters.sort && filters.sort !== "newest") {
+    params.set("sort", filters.sort);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+export function marketplaceFiltersAreActive(filters: MarketplaceFilters) {
+  return Boolean(
+    filters.search?.trim() ||
+      filters.category?.trim() ||
+      filters.country?.trim() ||
+      filters.industry?.trim() ||
+      filters.supplierType?.trim()
+  );
+}
 
 async function fetchCompaniesByUserIds(
   userIds: string[]
@@ -93,22 +168,84 @@ function attachCompanyInfo(
   }));
 }
 
-export async function fetchPublishedProducts(filters: MarketplaceFilters = {}) {
-  const { search, category, country, industry, sort = "newest" } = filters;
+async function resolveSupplierUserIds(filters: {
+  industry?: string;
+  supplierType?: string;
+  search?: string;
+}) {
+  const industry = filters.industry?.trim();
+  const supplierType = filters.supplierType?.trim();
+  const search = filters.search?.trim();
 
-  let userIdsFilter: string[] | null = null;
-  if (industry?.trim()) {
-    const { data: profiles, error: profileError } = await supabase
+  let constrainedIds: string[] | null = null;
+
+  if (industry || supplierType) {
+    let profileQuery = supabase.from("profiles").select("id");
+
+    if (industry) {
+      profileQuery = profileQuery.eq("industry", industry);
+    }
+    if (supplierType) {
+      profileQuery = profileQuery.eq("role", supplierType);
+    }
+
+    const { data, error } = await profileQuery;
+    if (error) {
+      return { constrainedIds: null, nameMatchIds: [] as string[], error };
+    }
+
+    constrainedIds = (data ?? []).map((profile) => profile.id as string);
+    if (constrainedIds.length === 0) {
+      return { constrainedIds: [], nameMatchIds: [], error: null };
+    }
+  }
+
+  let nameMatchIds: string[] = [];
+  if (search) {
+    const pattern = buildPostgrestIlikePattern(search);
+    let nameQuery = supabase
       .from("profiles")
       .select("id")
-      .eq("industry", industry.trim());
+      .or(`company_name.ilike.${pattern}`);
 
-    if (profileError) return { data: null, error: profileError };
-
-    userIdsFilter = (profiles ?? []).map((profile) => profile.id as string);
-    if (userIdsFilter.length === 0) {
-      return { data: [], error: null };
+    if (constrainedIds) {
+      nameQuery = nameQuery.in("id", constrainedIds);
     }
+
+    const { data, error } = await nameQuery;
+    if (error) {
+      return { constrainedIds, nameMatchIds: [], error };
+    }
+
+    nameMatchIds = (data ?? []).map((profile) => profile.id as string);
+  }
+
+  return { constrainedIds, nameMatchIds, error: null };
+}
+
+export async function fetchPublishedProducts(filters: MarketplaceFilters = {}) {
+  const {
+    search,
+    category,
+    country,
+    industry,
+    supplierType,
+    sort = "newest",
+  } = filters;
+
+  const supplierResult = await resolveSupplierUserIds({
+    industry,
+    supplierType,
+    search,
+  });
+
+  if (supplierResult.error) {
+    return { data: null, error: supplierResult.error };
+  }
+
+  const { constrainedIds, nameMatchIds } = supplierResult;
+  if (constrainedIds && constrainedIds.length === 0) {
+    return { data: [], error: null };
   }
 
   let query = supabase.from("products").select("*").eq("status", "published");
@@ -121,16 +258,24 @@ export async function fetchPublishedProducts(filters: MarketplaceFilters = {}) {
     query = query.eq("country_of_origin", country.trim());
   }
 
-  if (userIdsFilter) {
-    query = query.in("user_id", userIdsFilter);
+  if (constrainedIds) {
+    query = query.in("user_id", constrainedIds);
   }
 
   const trimmedSearch = search?.trim();
   if (trimmedSearch) {
-    const pattern = `%${trimmedSearch}%`;
-    query = query.or(
-      `product_name.ilike.${pattern},brand_name.ilike.${pattern},product_category.ilike.${pattern}`
-    );
+    const pattern = buildPostgrestIlikePattern(trimmedSearch);
+    const productFieldFilters = [
+      `product_name.ilike.${pattern}`,
+      `short_description.ilike.${pattern}`,
+      `full_description.ilike.${pattern}`,
+    ];
+
+    if (nameMatchIds.length > 0) {
+      productFieldFilters.push(`user_id.in.(${nameMatchIds.join(",")})`);
+    }
+
+    query = query.or(productFieldFilters.join(","));
   }
 
   if (sort === "oldest") {

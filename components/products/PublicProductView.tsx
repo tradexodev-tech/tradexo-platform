@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import ProductFavoriteToggle from "@/components/products/ProductFavoriteToggle";
+import ProductShareToggle from "@/components/products/ProductShareButton";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
 import {
   RelatedProductsSection,
@@ -67,10 +68,16 @@ export default function PublicProductView({
               <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {product.product_name || "Product"}
               </h1>
-              <ProductFavoriteToggle
-                productId={product.id}
-                productName={product.product_name || "Product"}
-              />
+              <div className="flex shrink-0 items-center gap-2">
+                <ProductShareToggle
+                  productSlug={product.slug}
+                  productName={product.product_name || "Product"}
+                />
+                <ProductFavoriteToggle
+                  productId={product.id}
+                  productName={product.product_name || "Product"}
+                />
+              </div>
             </div>
 
             {product.brand_name && (

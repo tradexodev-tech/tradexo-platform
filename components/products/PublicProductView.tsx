@@ -5,6 +5,10 @@ import {
   RelatedProductsSection,
   RelatedProductsSkeleton,
 } from "@/components/products/RelatedProducts";
+import {
+  SimilarSuppliersSection,
+  SimilarSuppliersSkeleton,
+} from "@/components/products/SimilarSuppliers";
 import PublicCompanySummary from "@/components/company/PublicCompanySummary";
 import ProductContactSupplier from "@/components/inquiries/ProductContactSupplier";
 import type { PublicCompanyProfile } from "@/types/company";
@@ -221,6 +225,16 @@ export default function PublicProductView({
               productCategory: product.product_category,
               supplierUserId: product.user_id,
               supplierIndustry: company?.industry,
+            }}
+          />
+        </Suspense>
+
+        <Suspense fallback={<SimilarSuppliersSkeleton />}>
+          <SimilarSuppliersSection
+            input={{
+              supplierUserId: product.user_id,
+              industry: company?.industry,
+              country: company?.country,
             }}
           />
         </Suspense>

@@ -1,4 +1,10 @@
+import { Suspense } from "react";
+
 import ProductImageGallery from "@/components/products/ProductImageGallery";
+import {
+  RelatedProductsSection,
+  RelatedProductsSkeleton,
+} from "@/components/products/RelatedProducts";
 import PublicCompanySummary from "@/components/company/PublicCompanySummary";
 import ProductContactSupplier from "@/components/inquiries/ProductContactSupplier";
 import type { PublicCompanyProfile } from "@/types/company";
@@ -207,6 +213,17 @@ export default function PublicProductView({
             <PublicCompanySummary company={company} />
           </div>
         )}
+
+        <Suspense fallback={<RelatedProductsSkeleton />}>
+          <RelatedProductsSection
+            input={{
+              productId: product.id,
+              productCategory: product.product_category,
+              supplierUserId: product.user_id,
+              supplierIndustry: company?.industry,
+            }}
+          />
+        </Suspense>
       </div>
     </main>
   );

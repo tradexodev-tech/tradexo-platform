@@ -140,6 +140,19 @@ export function marketplaceFiltersAreActive(filters: MarketplaceFilters) {
   );
 }
 
+export async function fetchMarketplaceCompaniesByUserIds(
+  userIds: string[]
+): Promise<Map<string, MarketplaceCompanyInfo>> {
+  return fetchCompaniesByUserIds(userIds);
+}
+
+export function attachMarketplaceCompanyInfo(
+  products: Product[],
+  companies: Map<string, MarketplaceCompanyInfo>
+): MarketplaceProduct[] {
+  return attachCompanyInfo(products, companies);
+}
+
 async function fetchCompaniesByUserIds(
   userIds: string[]
 ): Promise<Map<string, MarketplaceCompanyInfo>> {

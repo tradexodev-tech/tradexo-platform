@@ -1,13 +1,19 @@
+import FeaturedSuppliers from "@/components/marketplace/FeaturedSuppliers";
 import MarketplaceResults from "@/components/marketplace/MarketplaceResults";
+import type { FeaturedSupplier } from "@/lib/featured-suppliers";
 import type { MarketplaceProduct } from "@/lib/product-public";
 
 type MarketplaceViewProps = {
   products: MarketplaceProduct[];
+  featuredSuppliers: FeaturedSupplier[];
+  featuredSuppliersError?: string | null;
   errorMessage?: string | null;
 };
 
 export default function MarketplaceView({
   products,
+  featuredSuppliers,
+  featuredSuppliersError,
   errorMessage,
 }: MarketplaceViewProps) {
   return (
@@ -21,6 +27,11 @@ export default function MarketplaceView({
             Browse published products from verified global suppliers.
           </p>
         </div>
+
+        <FeaturedSuppliers
+          suppliers={featuredSuppliers}
+          errorMessage={featuredSuppliersError}
+        />
 
         <MarketplaceResults
           products={products}

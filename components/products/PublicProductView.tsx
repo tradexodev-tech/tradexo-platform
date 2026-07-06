@@ -1,4 +1,4 @@
-import ProductGallery from "@/components/products/ProductGallery";
+import ProductImageGallery from "@/components/products/ProductImageGallery";
 import PublicCompanySummary from "@/components/company/PublicCompanySummary";
 import ProductContactSupplier from "@/components/inquiries/ProductContactSupplier";
 import type { PublicCompanyProfile } from "@/types/company";
@@ -36,7 +36,7 @@ export default function PublicProductView({
     <main className="flex-1 bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <ProductGallery
+          <ProductImageGallery
             images={product.product_images}
             productName={product.product_name}
           />

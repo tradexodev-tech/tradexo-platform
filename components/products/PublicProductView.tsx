@@ -7,6 +7,11 @@ import {
   RelatedProductsSkeleton,
 } from "@/components/products/RelatedProducts";
 import {
+  RecentlyViewedProductsSection,
+  RecentlyViewedProductsSkeleton,
+} from "@/components/products/RecentlyViewedProducts";
+import RecentlyViewedViewTracker from "@/components/products/RecentlyViewedViewTracker";
+import {
   SimilarSuppliersSection,
   SimilarSuppliersSkeleton,
 } from "@/components/products/SimilarSuppliers";
@@ -45,6 +50,7 @@ export default function PublicProductView({
 
   return (
     <main className="flex-1 bg-background">
+      <RecentlyViewedViewTracker productId={product.id} />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
           <ProductImageGallery
@@ -244,6 +250,10 @@ export default function PublicProductView({
               country: company?.country,
             }}
           />
+        </Suspense>
+
+        <Suspense fallback={<RecentlyViewedProductsSkeleton />}>
+          <RecentlyViewedProductsSection excludeProductId={product.id} />
         </Suspense>
       </div>
     </main>

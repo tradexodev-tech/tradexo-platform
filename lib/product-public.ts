@@ -45,11 +45,17 @@ export type MarketplaceCompanyInfo = {
   company_name: string;
   company_slug: string;
   industry: string;
+  company_logo?: string | null;
+  is_verified?: boolean;
 };
 
 export type MarketplaceProduct = Product & {
   company: MarketplaceCompanyInfo | null;
 };
+
+export function mapPublishedProduct(row: Record<string, unknown>): Product {
+  return mapProduct(row);
+}
 
 export type MarketplaceFilters = {
   search?: string;

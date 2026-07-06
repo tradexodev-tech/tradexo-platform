@@ -1,4 +1,5 @@
 import Navbar from "@/components/landing/Navbar";
+import { FeaturedProductsSkeleton } from "@/components/marketplace/FeaturedProducts";
 import { FeaturedSuppliersSkeleton } from "@/components/marketplace/FeaturedSuppliers";
 import MarketplaceProductGridSkeleton from "@/components/marketplace/MarketplaceProductGridSkeleton";
 
@@ -16,6 +17,8 @@ export default function MarketplaceLoading() {
           <SkeletonBlock className="mt-2 h-5 w-96 max-w-full" />
 
           <FeaturedSuppliersSkeleton />
+
+          <FeaturedProductsSkeleton />
 
           <div className="space-y-3 border-b pb-6">
             <SkeletonBlock className="h-10 w-full" />

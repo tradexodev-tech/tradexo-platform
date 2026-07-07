@@ -16,7 +16,7 @@ async function getAuthenticatedUserId() {
   return { userId: user.id, error: null };
 }
 
-function mapNotification(row: Record<string, unknown>): Notification {
+export function mapNotification(row: Record<string, unknown>): Notification {
   return {
     id: row.id as string,
     user_id: row.user_id as string,

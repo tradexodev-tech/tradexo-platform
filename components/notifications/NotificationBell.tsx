@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
@@ -13,13 +13,24 @@ export default function NotificationBell() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
 
+  useEffect(() => {
+    console.info("[Tradexo Debug] NotificationBell mounted", {
+      enableRealtime: true,
+    });
+
+    return () => {
+      console.info("[Tradexo Debug] NotificationBell unmounted");
+    };
+  }, []);
+
   const {
     notifications,
     unreadCount,
     loading,
+    realtimeToast,
     markAsRead,
     markAllAsRead,
-  } = useNotifications();
+  } = useNotifications({ enableRealtime: true });
 
   const badgeLabel = formatUnreadBadge(unreadCount);
 
@@ -80,6 +91,16 @@ export default function NotificationBell() {
         onMarkAllAsRead={handleMarkAllAsRead}
         triggerRef={buttonRef}
       />
+
+      {realtimeToast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed right-4 bottom-4 z-[60] max-w-sm rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-lg"
+        >
+          {realtimeToast}
+        </div>
+      ) : null}
     </div>
   );
 }

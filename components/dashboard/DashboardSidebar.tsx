@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   Building2,
   Inbox,
   LayoutDashboard,
   Package,
+  Settings,
   Sparkles,
   Store,
   User,
@@ -84,6 +86,24 @@ const navSections: NavSection[] = [
         href: "#",
         icon: Sparkles,
         comingSoon: true,
+      },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      {
+        label: "Dashboard Settings",
+        href: "/dashboard/settings",
+        icon: Settings,
+        isActive: (pathname) => pathname.startsWith("/dashboard/settings"),
+      },
+      {
+        label: "Notification Preferences",
+        href: "/dashboard/settings/notifications",
+        icon: Bell,
+        isActive: (pathname) =>
+          pathname.startsWith("/dashboard/settings/notifications"),
       },
     ],
   },

@@ -1,4 +1,8 @@
 import { supabase } from "@/lib/supabase";
+import {
+  queueInquiryReplySentEmail,
+  queueNewInquiryReceivedEmail,
+} from "@/lib/email";
 import type {
   CreateInquiryInput,
   Inquiry,
@@ -78,6 +82,8 @@ export async function createInquiry(input: CreateInquiryInput) {
   const { error } = await supabase.from("inquiries").insert(payload);
 
   if (error) return { data: null, error };
+
+  void queueNewInquiryReceivedEmail({ input });
 
   return { data: null, error: null };
 }
@@ -212,7 +218,10 @@ export async function replyToInquiry(id: string, replyMessage: string) {
     return { data: null, error: { message: "Inquiry not found" } };
   }
 
-  return { data: mapInquiry(data), error: null };
+  const inquiry = mapInquiry(data);
+  void queueInquiryReplySentEmail({ inquiry });
+
+  return { data: inquiry, error: null };
 }
 
 async function countInquiriesForSupplier(status?: InquiryStatus) {

@@ -1,10 +1,17 @@
 import { supabase } from "./supabase";
+import { queueWelcomeEmail } from "@/lib/email";
 
 export async function signUp(email: string, password: string) {
-  return await supabase.auth.signUp({
+  const result = await supabase.auth.signUp({
     email,
     password,
   });
+
+  if (!result.error) {
+    queueWelcomeEmail({ email });
+  }
+
+  return result;
 }
 
 export async function signIn(email: string, password: string) {

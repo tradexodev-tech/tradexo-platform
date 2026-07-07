@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { queueProductPublishedEmail } from "@/lib/email";
 import type {
   Product,
   ProductFormInput,
@@ -109,6 +110,57 @@ async function getAuthenticatedUserId() {
   return { userId: user.id, error: null };
 }
 
+function buildProductSnapshot({
+  id,
+  userId,
+  input,
+  status,
+}: {
+  id: string;
+  userId: string;
+  input: ProductFormInput;
+  status: ProductStatus;
+}): Product {
+  const now = new Date().toISOString();
+
+  return {
+    id,
+    user_id: userId,
+    company_id: userId,
+    ...formFields(input),
+    status,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+function isDraftToPublishedTransition(
+  previousStatus: unknown,
+  nextStatus: ProductStatus
+) {
+  return (
+    normalizeProductStatus(previousStatus) === "draft" &&
+    nextStatus === "published"
+  );
+}
+
+function triggerProductPublishedEmail(
+  product: Product,
+  previousStatus: unknown,
+  nextStatus: ProductStatus
+) {
+  if (!isDraftToPublishedTransition(previousStatus, nextStatus)) {
+    return;
+  }
+
+  console.info("[Tradexo Debug] Product Published Trigger", {
+    productId: product.id,
+    productName: product.product_name,
+    status: product.status,
+  });
+  void queueProductPublishedEmail({ product });
+}
+
 export async function getCurrentUserId() {
   return getAuthenticatedUserId();
 }
@@ -151,10 +203,27 @@ export async function createProduct(
   const { userId, error: authError } = await getAuthenticatedUserId();
   if (!userId) return { data: null, error: authError };
 
-  const { data, error } = await supabase
+  const { data: inserted, error: insertError } = await supabase
     .from("products")
     .insert(toInsertPayload(input, status, userId))
+    .select("id")
+    .single();
+
+  if (insertError) return { data: null, error: insertError };
+
+  const snapshot = buildProductSnapshot({
+    id: inserted.id as string,
+    userId,
+    input,
+    status,
+  });
+  triggerProductPublishedEmail(snapshot, "draft", status);
+
+  const { data, error } = await supabase
+    .from("products")
     .select("*")
+    .eq("id", inserted.id)
+    .eq("user_id", userId)
     .single();
 
   if (error) return { data: null, error };
@@ -170,12 +239,37 @@ export async function updateProduct(
   const { userId, error: authError } = await getAuthenticatedUserId();
   if (!userId) return { data: null, error: authError };
 
-  const { data, error } = await supabase
+  const { data: existing, error: existingError } = await supabase
+    .from("products")
+    .select("status")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existingError) return { data: null, error: existingError };
+  if (!existing) return { data: null, error: { message: "Product not found" } };
+
+  const previousStatus = existing.status;
+
+  const { error: updateError } = await supabase
     .from("products")
     .update(toUpdatePayload(input, status))
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("user_id", userId);
+
+  if (updateError) return { data: null, error: updateError };
+
+  triggerProductPublishedEmail(
+    buildProductSnapshot({ id, userId, input, status }),
+    previousStatus,
+    status
+  );
+
+  const { data, error } = await supabase
+    .from("products")
     .select("*")
+    .eq("id", id)
+    .eq("user_id", userId)
     .single();
 
   if (error) return { data: null, error };
@@ -187,12 +281,65 @@ export async function updateProductStatus(id: string, status: ProductStatus) {
   const { userId, error: authError } = await getAuthenticatedUserId();
   if (!userId) return { data: null, error: authError };
 
-  const { data, error } = await supabase
+  const { data: existing, error: existingError } = await supabase
+    .from("products")
+    .select("status, product_name, slug")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existingError) return { data: null, error: existingError };
+  if (!existing) return { data: null, error: { message: "Product not found" } };
+
+  const previousStatus = existing.status;
+
+  const { error: updateError } = await supabase
     .from("products")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("user_id", userId);
+
+  if (updateError) return { data: null, error: updateError };
+
+  const snapshot: Product = {
+    id,
+    user_id: userId,
+    company_id: userId,
+    product_name: (existing.product_name as string) ?? "",
+    product_category: "",
+    short_description: "",
+    full_description: "",
+    hs_code: "",
+    country_of_origin: "",
+    brand_name: "",
+    model_number: "",
+    moq: "",
+    production_capacity: "",
+    unit: "",
+    price_on_request: true,
+    currency: "USD",
+    price: null,
+    lead_time: "",
+    product_images: [],
+    product_video: "",
+    certifications: "",
+    specifications: parseSpecifications(null),
+    variants: [],
+    seo_title: "",
+    seo_description: "",
+    meta_keywords: "",
+    slug: (existing.slug as string) ?? "",
+    status,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  triggerProductPublishedEmail(snapshot, previousStatus, status);
+
+  const { data, error } = await supabase
+    .from("products")
     .select("*")
+    .eq("id", id)
+    .eq("user_id", userId)
     .single();
 
   if (error) return { data: null, error };

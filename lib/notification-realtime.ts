@@ -9,6 +9,16 @@ export type NotificationRealtimeHandlers = {
   onUpdate: (notification: Notification) => void;
 };
 
+export type NotificationRealtimeSubscription = {
+  id: string;
+  release: () => Promise<void>;
+};
+
+let sharedChannel: RealtimeChannel | null = null;
+let sharedUserId: string | null = null;
+let listenerCounter = 0;
+const listeners = new Map<string, NotificationRealtimeHandlers>();
+
 export function buildNotificationRealtimeFilter(userId: string) {
   return `user_id=eq.${userId}`;
 }
@@ -27,26 +37,51 @@ export async function ensureRealtimeAuth() {
   return { session, error: null };
 }
 
-export async function subscribeToNotificationChanges(
-  userId: string,
-  handlers: NotificationRealtimeHandlers
-): Promise<RealtimeChannel> {
-  const filter = buildNotificationRealtimeFilter(userId);
+function dispatchInsert(notification: Notification) {
+  for (const handlers of listeners.values()) {
+    handlers.onInsert(notification);
+  }
+}
+
+function dispatchUpdate(notification: Notification) {
+  for (const handlers of listeners.values()) {
+    handlers.onUpdate(notification);
+  }
+}
+
+async function teardownSharedChannel() {
+  if (!sharedChannel) {
+    return;
+  }
+
+  await supabase.removeChannel(sharedChannel);
+  sharedChannel = null;
+  sharedUserId = null;
+}
+
+async function ensureSharedChannel(userId: string) {
+  if (sharedChannel && sharedUserId === userId) {
+    return sharedChannel;
+  }
+
+  await teardownSharedChannel();
 
   const { session, error } = await ensureRealtimeAuth();
 
   if (!session) {
     console.info("[Tradexo Debug] realtime auth unavailable", {
       userId,
-      filter,
       error,
     });
   }
+
+  const filter = buildNotificationRealtimeFilter(userId);
 
   console.info("[Tradexo Debug] subscribing notifications channel", {
     userId,
     filter,
     hasSession: Boolean(session),
+    listenerCount: listeners.size,
   });
 
   const channel = supabase
@@ -64,7 +99,7 @@ export async function subscribeToNotificationChanges(
           id: (payload.new as { id?: string } | null)?.id,
           userId: (payload.new as { user_id?: string } | null)?.user_id,
         });
-        handlers.onInsert(
+        dispatchInsert(
           mapNotification(payload.new as Record<string, unknown>)
         );
       }
@@ -83,7 +118,7 @@ export async function subscribeToNotificationChanges(
           userId: (payload.new as { user_id?: string } | null)?.user_id,
           isRead: (payload.new as { is_read?: boolean } | null)?.is_read,
         });
-        handlers.onUpdate(
+        dispatchUpdate(
           mapNotification(payload.new as Record<string, unknown>)
         );
       }
@@ -97,15 +132,56 @@ export async function subscribeToNotificationChanges(
       });
     });
 
+  sharedChannel = channel;
+  sharedUserId = userId;
+
   return channel;
 }
 
+export async function acquireNotificationRealtimeSubscription(
+  userId: string,
+  handlers: NotificationRealtimeHandlers
+): Promise<NotificationRealtimeSubscription> {
+  const id = `notification-listener-${++listenerCounter}`;
+  listeners.set(id, handlers);
+
+  await ensureSharedChannel(userId);
+
+  return {
+    id,
+    release: async () => {
+      listeners.delete(id);
+
+      if (listeners.size > 0) {
+        return;
+      }
+
+      console.info("[Tradexo Debug] tearing down notifications channel", {
+        userId: sharedUserId,
+      });
+
+      await teardownSharedChannel();
+    },
+  };
+}
+
+/** @deprecated Use acquireNotificationRealtimeSubscription instead. */
+export async function subscribeToNotificationChanges(
+  userId: string,
+  handlers: NotificationRealtimeHandlers
+): Promise<RealtimeChannel> {
+  await acquireNotificationRealtimeSubscription(userId, handlers);
+  return sharedChannel!;
+}
+
+/** @deprecated Use NotificationRealtimeSubscription.release instead. */
 export async function unsubscribeFromNotificationChanges(
   channel: RealtimeChannel | null
 ) {
-  if (!channel) {
+  if (!channel || channel !== sharedChannel) {
     return;
   }
 
-  await supabase.removeChannel(channel);
+  listeners.clear();
+  await teardownSharedChannel();
 }

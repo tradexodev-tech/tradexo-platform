@@ -16,7 +16,7 @@ type NotificationItemProps = {
   onMarkAsRead: (notificationId: string) => void;
 };
 
-function NotificationIcon({
+export function NotificationIcon({
   type,
   className,
 }: {
@@ -38,7 +38,7 @@ function NotificationIcon({
   }
 }
 
-function getNotificationIconClassName(type: NotificationType) {
+export function getNotificationIconClassName(type: NotificationType) {
   switch (type) {
     case "inquiry_received":
       return "bg-blue-100 text-blue-700";

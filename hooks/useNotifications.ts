@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-
 import {
-  ensureRealtimeAuth,
-  subscribeToNotificationChanges,
-  unsubscribeFromNotificationChanges,
+  acquireNotificationRealtimeSubscription,
+  type NotificationRealtimeSubscription,
 } from "@/lib/notification-realtime";
 import {
   fetchNotifications,
@@ -30,8 +27,7 @@ export function useNotifications(options?: UseNotificationsOptions) {
   const [realtimeToast, setRealtimeToast] = useState<string | null>(null);
   const notificationsRef = useRef(notifications);
   const unreadCountRef = useRef(unreadCount);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const subscribedUserIdRef = useRef<string | null>(null);
+  const subscriptionRef = useRef<NotificationRealtimeSubscription | null>(null);
   const mountIdRef = useRef(0);
 
   useEffect(() => {
@@ -172,10 +168,7 @@ export function useNotifications(options?: UseNotificationsOptions) {
         return;
       }
 
-      if (
-        channelRef.current &&
-        subscribedUserIdRef.current === session.user.id
-      ) {
+      if (subscriptionRef.current) {
         console.info("[Tradexo Debug] useNotifications realtime already active", {
           mountId,
           userId: session.user.id,
@@ -183,14 +176,7 @@ export function useNotifications(options?: UseNotificationsOptions) {
         return;
       }
 
-      if (channelRef.current) {
-        await unsubscribeFromNotificationChanges(channelRef.current);
-        channelRef.current = null;
-      }
-
-      await ensureRealtimeAuth();
-
-      channelRef.current = await subscribeToNotificationChanges(
+      subscriptionRef.current = await acquireNotificationRealtimeSubscription(
         session.user.id,
         {
           onInsert: (notification) => {
@@ -201,7 +187,6 @@ export function useNotifications(options?: UseNotificationsOptions) {
           },
         }
       );
-      subscribedUserIdRef.current = session.user.id;
     })();
 
     return () => {
@@ -209,9 +194,11 @@ export function useNotifications(options?: UseNotificationsOptions) {
       console.info("[Tradexo Debug] useNotifications realtime cleanup", {
         mountId,
       });
-      void unsubscribeFromNotificationChanges(channelRef.current);
-      channelRef.current = null;
-      subscribedUserIdRef.current = null;
+      const subscription = subscriptionRef.current;
+      subscriptionRef.current = null;
+      if (subscription) {
+        void subscription.release();
+      }
     };
   }, [enableRealtime]);
 

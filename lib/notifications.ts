@@ -162,3 +162,78 @@ export async function markAllNotificationsAsRead() {
 
   return { data, error: null };
 }
+
+export async function markNotificationAsUnread(notificationId: string) {
+  const { userId, error: authError } = await getAuthenticatedUserId();
+
+  if (!userId) {
+    return { data: null, error: authError };
+  }
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ is_read: false })
+    .eq("id", notificationId)
+    .eq("user_id", userId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export async function markNotificationsAsRead(notificationIds: string[]) {
+  const { userId, error: authError } = await getAuthenticatedUserId();
+
+  if (!userId || notificationIds.length === 0) {
+    return { data: null, error: authError };
+  }
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .in("id", notificationIds)
+    .eq("user_id", userId)
+    .select("id");
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export async function deleteNotification(notificationId: string) {
+  const { userId, error: authError } = await getAuthenticatedUserId();
+
+  if (!userId) {
+    return { error: authError };
+  }
+
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("id", notificationId)
+    .eq("user_id", userId);
+
+  return { error };
+}
+
+export async function deleteNotifications(notificationIds: string[]) {
+  const { userId, error: authError } = await getAuthenticatedUserId();
+
+  if (!userId || notificationIds.length === 0) {
+    return { error: authError };
+  }
+
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .in("id", notificationIds)
+    .eq("user_id", userId);
+
+  return { error };
+}

@@ -48,6 +48,12 @@ const navSections: NavSection[] = [
         isActive: (pathname) => pathname.startsWith("/dashboard/inquiries"),
       },
       {
+        label: "Notifications",
+        href: "/dashboard/notifications",
+        icon: Bell,
+        isActive: (pathname) => pathname.startsWith("/dashboard/notifications"),
+      },
+      {
         label: "Analytics",
         href: "#",
         icon: BarChart3,

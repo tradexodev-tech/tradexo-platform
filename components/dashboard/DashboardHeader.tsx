@@ -1,3 +1,4 @@
+import NotificationBell from "@/components/notifications/NotificationBell";
 import UserMenu from "./UserMenu";
 
 type DashboardHeaderProps = {
@@ -19,11 +20,14 @@ export default function DashboardHeader({
           Manage your Tradexo workspace
         </p>
       </div>
-      <UserMenu
-        fullName={fullName}
-        companyName={companyName}
-        onLogout={onLogout}
-      />
+      <div className="flex items-center gap-3 sm:gap-4">
+        <NotificationBell />
+        <UserMenu
+          fullName={fullName}
+          companyName={companyName}
+          onLogout={onLogout}
+        />
+      </div>
     </header>
   );
 }

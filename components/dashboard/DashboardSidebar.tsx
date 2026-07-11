@@ -6,9 +6,13 @@ import {
   BarChart3,
   Bell,
   Building2,
+  CalendarDays,
+  ClipboardList,
+  FileText,
   Inbox,
   LayoutDashboard,
   Package,
+  Plus,
   Settings,
   Sparkles,
   Store,
@@ -48,6 +52,18 @@ const navSections: NavSection[] = [
         isActive: (pathname) => pathname.startsWith("/dashboard/inquiries"),
       },
       {
+        label: "RFQs",
+        href: "/dashboard/rfqs",
+        icon: ClipboardList,
+        isActive: (pathname) => pathname.startsWith("/dashboard/rfqs"),
+      },
+      {
+        label: "Quotations",
+        href: "/dashboard/quotations",
+        icon: FileText,
+        isActive: (pathname) => pathname.startsWith("/dashboard/quotations"),
+      },
+      {
         label: "Notifications",
         href: "/dashboard/notifications",
         icon: Bell,
@@ -75,6 +91,32 @@ const navSections: NavSection[] = [
         href: "/dashboard/products",
         icon: Package,
         isActive: (pathname) => pathname.startsWith("/dashboard/products"),
+      },
+    ],
+  },
+  {
+    title: "Events",
+    items: [
+      {
+        label: "Events",
+        href: "/dashboard/events",
+        icon: CalendarDays,
+        isActive: (pathname) =>
+          pathname === "/dashboard/events" ||
+          (pathname.startsWith("/dashboard/events/") &&
+            !pathname.startsWith("/dashboard/events/create")),
+      },
+      {
+        label: "Create Event",
+        href: "/dashboard/events/create",
+        icon: Plus,
+        isActive: (pathname) => pathname.startsWith("/dashboard/events/create"),
+      },
+      {
+        label: "My Events",
+        href: "/dashboard/events",
+        icon: CalendarDays,
+        isActive: (pathname) => pathname === "/dashboard/events",
       },
     ],
   },
